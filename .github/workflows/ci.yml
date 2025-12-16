@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Установка Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Установка зависимостей
+      run: |
+        pip install -r requirements.txt
+
+    - name: Запуск PEP8 и flake8 (при push)
+      if: github.event_name == 'push'
+      run: |
+        pytest tests/
+
+    - name: Запуск main.py и создание артефактов (при PR)
+      if: github.event_name == 'pull_request'
+      run: |
+        python src/main.py
+        mkdir -p artifacts
+        cp data/output.csv artifacts/
+        echo "Артефакт output.csv сгенерирован."
+
+    - name: Загрузка артефактов
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v3
+      with:
+        name: prediction-output
+        path: artifacts/

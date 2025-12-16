@@ -1,0 +1,6 @@
+student_id,name,attendance_rate,avg_grade,missed_assignments,login_frequency
+1,Анна,95,85,1,4
+2,Борис,40,45,8,1
+3,Виктор,70,60,3,2
+4,Галина,90,92,0,5
+5,Дмитрий,50,30,10,1
