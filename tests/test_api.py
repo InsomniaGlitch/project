@@ -1,14 +1,21 @@
+import pytest
 from fastapi.testclient import TestClient
-from ..src.main import app
+from src.main import app
 
-client = TestClient(app)
 
-def test_health_check():
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c
+
+
+def test_health_check(client):
     response = client.get("/")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
-def test_predict_single_student():
+
+def test_predict_single_student(client):
     student_data = [{
         "student_id": 1,
         "name": "Анна",
@@ -27,7 +34,8 @@ def test_predict_single_student():
     assert predictions[0]["name"] == "Анна"
     assert 0.0 <= predictions[0]["dropout_risk"] <= 1.0
 
-def test_predict_multiple_students():
+
+def test_predict_multiple_students(client):
     students_data = [
         {
             "student_id": 1,
@@ -57,7 +65,8 @@ def test_predict_multiple_students():
     assert predictions[1]["name"] == "Борис"
     assert all(0.0 <= p["dropout_risk"] <= 1.0 for p in predictions)
 
-def test_predict_invalid_data():
+
+def test_predict_invalid_data(client):
     # Пропущено обязательное поле
     invalid_data = [{"name": "Test"}]
 

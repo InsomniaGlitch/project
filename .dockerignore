@@ -20,5 +20,5 @@ node_modules
 *.swp
 *.swo
 .DS_Store
-models/*.pkl  # исключим, если не хотим включать обученные модели
+models/*.pkl
 artifacts/

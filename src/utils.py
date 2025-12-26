@@ -8,6 +8,5 @@ def load_data(path: str) -> pd.DataFrame:
 
 def save_predictions(names, risks, output_path: str):
     """Сохранение результата."""
-    df = pd.DataFrame({'name': names, 'dropout_risk': risks})
+    df = pd.DataFrame({"name": names, "dropout_risk": risks})
     df.to_csv(output_path, index=False)
-    
