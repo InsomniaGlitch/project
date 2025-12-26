@@ -1,0 +1,24 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache
+.tox
+.coverage
+.git
+README.md
+.gitignore
+Dockerfile
+docker-compose.yml
+node_modules
+*.swp
+*.swo
+.DS_Store
+models/*.pkl  # исключим, если не хотим включать обученные модели
+artifacts/

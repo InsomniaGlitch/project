@@ -22,18 +22,27 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Запуск PEP8 и flake8 (при push)
-      if: github.event_name == 'push'
+    - name: Запуск тестов (PEP8, flake8, API)
       run: |
-        pytest tests/
+        pytest tests/ -v
 
-    - name: Запуск main.py и создание артефактов (при PR)
+    - name: Генерация артефактов при PR
       if: github.event_name == 'pull_request'
       run: |
-        python src/main.py
-        mkdir -p artifacts
-        cp data/output.csv artifacts/
-        echo "Артефакт output.csv сгенерирован."
+        mkdir -p models
+        python -c "from src.model import train_and_save_model; train_and_save_model()"
+        python -c "
+        from src.model import load_model, predict_risk
+        import pandas as pd
+        model = load_model()
+        df = pd.read_csv('data/input.csv')
+        X = df[['attendance_rate', 'avg_grade', 'missed_assignments', 'login_frequency']]
+        risks = predict_risk(model, X)
+        df_result = df[['name']].copy()
+        df_result['dropout_risk'] = risks
+        df_result.to_csv('artifacts/output.csv', index=False)
+        "
+        cp models/logistic_regression_model.pkl artifacts/ 2>/dev/null || echo "Модель будет обучена при запуске"
 
     - name: Загрузка артефактов
       if: github.event_name == 'pull_request'

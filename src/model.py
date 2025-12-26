@@ -1,36 +1,52 @@
+# src/model.py
 import numpy as np
-from sklearn.ensemble import IsolationForest
+import pandas as pd
+import joblib
+import os
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+MODEL_PATH = "models/logistic_regression_model.pkl"
 
 
-def predict_dropout_risk(df: dict) -> list:
-    """
-    Упрощённая модель на основе Isolation Forest + ручных правил.
-    В реальности можно заменить на Logistic Regression или XGBoost.
-    """
-    features = np.array([
-        df['attendance_rate'] / 100.0,
-        df['avg_grade'] / 100.0,
-        df['missed_assignments'] / 10.0,
-        df['login_frequency'] / 5.0
-    ]).T
-
-    # Нормализация
-    scaler = StandardScaler()
-    features_scaled = scaler.fit_transform(features)
-
-    # Модель аномалий (низкие показатели = аномалии = риск отчисления)
-    model = IsolationForest(contamination=0.2, random_state=42)
-    anomaly_scores = model.fit_predict(features_scaled)
-    anomaly_proba = (anomaly_scores == -1).astype(float)  # 1 = высокий риск
-
-    # Добавим простую логику
-    manual_risk = (
+def create_training_data(df):
+    dropped_out = (
         (df['attendance_rate'] < 60) |
         (df['avg_grade'] < 50) |
-        (df['missed_assignments'] > 5)
-    ).astype(float)
+        (df['missed_assignments'] > 6)
+    ).astype(int)
+    X = df[['attendance_rate',
+            'avg_grade',
+            'missed_assignments',
+            'login_frequency']]
+    return X, dropped_out
 
-    # Комбинируем
-    combined_risk = np.clip((anomaly_proba * 0.6 + manual_risk * 0.4), 0, 1)
-    return np.round(combined_risk, 3).tolist()
+
+def train_and_save_model():
+    """Обучает и сохраняет модель."""
+    df_train = pd.read_csv("data/input.csv")
+    X, y = create_training_data(df_train)
+
+    model = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', LogisticRegression(random_state=42))
+    ])
+
+    model.fit(X, y)
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(model, MODEL_PATH)
+    print(f"Модель сохранена в {MODEL_PATH}")
+
+
+def load_model():
+    """Загружает модель или обучает, если не существует."""
+    if not os.path.exists(MODEL_PATH):
+        train_and_save_model()
+    return joblib.load(MODEL_PATH)
+
+
+def predict_risk(model, X):
+    """Предсказывает вероятность отчисления."""
+    proba = model.predict_proba(X)[:, 1]
+    return np.round(proba, 3)
