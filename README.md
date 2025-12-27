@@ -23,3 +23,15 @@ python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # или .venv\Scripts\activate  # Windows
 pip install -r requirements.txt
+```
+
+## Запуск
+```bash
+./run.sh
+```
+
+## Endpoints
+```bash
+localhost/docs # Документация
+localhost/predict # Рабочий, посещать не надо
+localhost/ # Состояние
