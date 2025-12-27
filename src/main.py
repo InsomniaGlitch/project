@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from typing import List
 import pandas as pd
-from src.utils import save_predictions
+from .utils import save_predictions
 
-from src.model import load_model, predict_risk
-from src.schema import StudentInput, PredictionResponse
+from .model import load_model, predict_risk
+from .schema import StudentInput, PredictionResponse
 
 
 # Управление жизненным циклом приложения
@@ -14,10 +14,10 @@ async def lifespan(app: FastAPI):
     # Загрузка модели при старте
     global model
     model = load_model()
-    print("✅ Модель загружена при старте.")
+    print("The model was loaded.")
     yield
     # Здесь можно добавить очистку при завершении (опционально)
-    print("🛑 Приложение остановлено.")
+    print("Stopped.")
 
 
 app = FastAPI(
