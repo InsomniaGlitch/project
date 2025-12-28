@@ -24,6 +24,7 @@ jobs:
 
     - name: Запуск тестов (PEP8, flake8, API)
       run: |
+        export PYTHONPATH='.'
         pytest tests/ -v
 
     - name: Генерация артефактов при PR
