@@ -29,6 +29,7 @@ jobs:
     - name: Генерация артефактов при PR
       if: github.event_name == 'pull_request'
       run: |
+        $env:PYTHONPATH = '.'
         mkdir -p models
         python -c "from src.model import train_and_save_model; train_and_save_model()"
         python -c "
