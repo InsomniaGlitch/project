@@ -11,61 +11,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Установка Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    - name: Установка зависимостей
       run: |
-        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run code style checks (PEP8, flake8)
-      if: github.event_name == 'push'
+    - name: Запуск тестов (PEP8, flake8, API)
       run: |
         pytest tests/ -v
 
-    - name: Run prediction and generate artifacts
+    - name: Генерация артефактов при PR
       if: github.event_name == 'pull_request'
       run: |
-        # Обучаем модель
         mkdir -p models
+        python -c "from src.model import train_and_save_model; train_and_save_model()"
         python -c "
-        from src.model import train_and_save_model; 
-        train_and_save_model()
-        "
-
-        # Генерируем предсказания
-        python -c "
-        import pandas as pd
         from src.model import load_model, predict_risk
-        from src.utils import save_predictions
-
-        # Загружаем данные
+        import pandas as pd
+        model = load_model()
         df = pd.read_csv('data/input.csv')
         X = df[['attendance_rate', 'avg_grade', 'missed_assignments', 'login_frequency']]
-
-        # Загружаем модель
-        model = load_model()
         risks = predict_risk(model, X)
-
-        # Сохраняем результат
-        save_predictions(df['name'].tolist(), risks, 'artifacts/output.csv')
+        df_result = df[['name']].copy()
+        df_result['dropout_risk'] = risks
+        df_result.to_csv('artifacts/output.csv', index=False)
         "
+        cp models/logistic_regression_model.pkl artifacts/ 2>/dev/null || echo "Модель будет обучена при запуске"
 
-        # Создаём папку артефактов, если не существует
-        mkdir -p artifacts
-
-    - name: Upload artifacts
+    - name: Загрузка артефактов
       if: github.event_name == 'pull_request'
       uses: actions/upload-artifact@v4
       with:
         name: prediction-output
-        path: |
-          artifacts/output.csv
-          models/logistic_regression_model.pkl
-        retention-days: 7
+        path: artifacts/
