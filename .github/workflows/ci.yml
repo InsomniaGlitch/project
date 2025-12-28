@@ -11,35 +11,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4  # Обновлено
 
-    - name: Установка Python
-      uses: actions/setup-python@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5  # Обновлено
       with:
         python-version: '3.10'
 
-    - name: Установка зависимостей
+    - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Запуск тестов PEP8 и flake8
+    - name: Run code style checks (PEP8, flake8)
       if: github.event_name == 'push'
       run: |
-        pytest tests/
+        pytest tests/ -v
 
-    - name: Запуск API и генерация артефактов (при PR)
+    - name: Run prediction and generate artifacts
       if: github.event_name == 'pull_request'
       run: |
+        # Обучаем модель
         mkdir -p models
-        python -c "from src.model import train_and_save_model; train_and_save_model()"
-        python src/main.py  # можно запустить как скрипт предсказания
-        mkdir -p artifacts
-        cp data/output.csv artifacts/
-        cp models/logistic_regression_model.pkl artifacts/
+        python -c "
+from src.model import train_and_save_model; 
+train_and_save_model()
+"
 
-    - name: Загрузка артефактов
+        # Генерируем предсказания
+        python -c "
+import pandas as pd
+from src.model import load_model, predict_risk
+from src.utils import save_predictions
+
+# Загружаем данные
+df = pd.read_csv('data/input.csv')
+X = df[['attendance_rate', 'avg_grade', 'missed_assignments', 'login_frequency']]
+
+# Загружаем модель
+model = load_model()
+risks = predict_risk(model, X)
+
+# Сохраняем результат
+save_predictions(df['name'].tolist(), risks, 'artifacts/output.csv')
+"
+
+        # Создаём папку артефактов, если не существует
+        mkdir -p artifacts
+
+    - name: Upload artifacts
       if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # ✅ Исправлено: v4 вместо v3
       with:
         name: prediction-output
-        path: artifacts/
+        path: |
+          artifacts/output.csv
+          models/logistic_regression_model.pkl
+        retention-days: 7
