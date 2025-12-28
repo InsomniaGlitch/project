@@ -12,10 +12,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Обновлено
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v5  # Обновлено
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -35,34 +35,34 @@ jobs:
         # Обучаем модель
         mkdir -p models
         python -c "
-from src.model import train_and_save_model; 
-train_and_save_model()
-"
+        from src.model import train_and_save_model; 
+        train_and_save_model()
+        "
 
         # Генерируем предсказания
         python -c "
-import pandas as pd
-from src.model import load_model, predict_risk
-from src.utils import save_predictions
+        import pandas as pd
+        from src.model import load_model, predict_risk
+        from src.utils import save_predictions
 
-# Загружаем данные
-df = pd.read_csv('data/input.csv')
-X = df[['attendance_rate', 'avg_grade', 'missed_assignments', 'login_frequency']]
+        # Загружаем данные
+        df = pd.read_csv('data/input.csv')
+        X = df[['attendance_rate', 'avg_grade', 'missed_assignments', 'login_frequency']]
 
-# Загружаем модель
-model = load_model()
-risks = predict_risk(model, X)
+        # Загружаем модель
+        model = load_model()
+        risks = predict_risk(model, X)
 
-# Сохраняем результат
-save_predictions(df['name'].tolist(), risks, 'artifacts/output.csv')
-"
+        # Сохраняем результат
+        save_predictions(df['name'].tolist(), risks, 'artifacts/output.csv')
+        "
 
         # Создаём папку артефактов, если не существует
         mkdir -p artifacts
 
     - name: Upload artifacts
       if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v4  # ✅ Исправлено: v4 вместо v3
+      uses: actions/upload-artifact@v4
       with:
         name: prediction-output
         path: |
