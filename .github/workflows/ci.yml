@@ -1,0 +1,45 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Установка Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Установка зависимостей
+      run: |
+        pip install -r requirements.txt
+
+    - name: Запуск тестов PEP8 и flake8
+      if: github.event_name == 'push'
+      run: |
+        pytest tests/
+
+    - name: Запуск API и генерация артефактов (при PR)
+      if: github.event_name == 'pull_request'
+      run: |
+        mkdir -p models
+        python -c "from src.model import train_and_save_model; train_and_save_model()"
+        python src/main.py  # можно запустить как скрипт предсказания
+        mkdir -p artifacts
+        cp data/output.csv artifacts/
+        cp models/logistic_regression_model.pkl artifacts/
+
+    - name: Загрузка артефактов
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v3
+      with:
+        name: prediction-output
+        path: artifacts/
